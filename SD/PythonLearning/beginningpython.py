@@ -24,8 +24,11 @@ URLs = ('https://btc-e.com/api/3/ticker/btc_usd',)
 port = 80
 user = sys.argv[1]
 pwd = sys.argv[2]
-userlist = ('ferraz', 'root', 'dpr',)
-pwdlist = ('starwars', 'toor', 'rogers')
+users = {
+    'ferraz': 'starwars',
+    'root': 'toor',
+    'dpr': 'rogers'
+}
 
 
 
@@ -40,9 +43,10 @@ def Conexao():
         print "\nVoce escolheu a opcao %s" % Exchanges
 
 def Verifica_senha():
-    pwd2 = raw_input('Digite sua senha novamente: ')
-    while pwd2 != pwd:
-        pwd2 = raw_input('Senha errada, tente novamente: ')
+    if pwd == users[user]:
+        print "Logado com sucesso \n"
+    else:
+        sys.exit(1)
 
 def Menu():
     largura = input('Entre com o tamanho do menu da sua tela: ')
@@ -68,9 +72,9 @@ def Logado():
 
 def Main():
     print "\n[+]Verificando seu usuario e senha\n"
-    if user in userlist:
-        Logado()
+    if user in users:
         Verifica_senha()
+        Logado()
         Menu()
 
     else:
