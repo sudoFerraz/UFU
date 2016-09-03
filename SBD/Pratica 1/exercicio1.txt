@@ -1,0 +1,11 @@
+Banco de dados de companhia de taxi
+
+O banco esta organizado por motoristas. Para cada motorista 'e guardado no sistema o seu numero de motorista, sua data de nascimento, seu sexo, seu telefone dividido em : DDI, DDD, Numero sufixo, Numero prefixo; e seu endereco dividido em: Cidade, Bairro, CEP, Complemento do endereco, Numero do endereco, Nome logradouro e titulo logradouro.
+
+Cada motorista possui apenas uma Carteira de Habilitacao, para a carteira 'e armazenado o Numero do motorista, o numero da CNH, a Categoria da CNG, sua Data de emissao e sua Data de validade.
+
+O sistema tambem mantem as informacoes do veiculo que o motorista dirige, para este veiculo, 'e armazenada a Placa, sua Marca, o Ano do Modelo, o Ano de fabricacao e o numero do Veiculo
+
+Cada veiculo pode indicar varios chamados, que sao armazenados junto com seu local de destino, seu local de origem, um Telefone de contato composto por : DDI, DDD, Numero sufixo, Numero prefixo; armazena tambem Data do chamado, e o Numero do chamado.
+
+Um motorista recebe um boleto, que 'e utilizado pelo chamado. Para o boleto, 'e armazenado o numero do boleto, e a empresa conveniada.
