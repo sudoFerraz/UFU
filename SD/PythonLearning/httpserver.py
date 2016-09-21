@@ -26,7 +26,7 @@ post = "POST"
 delete = "DEL"
 header = "HEADER"
 __metaclass__ = type
-count = 0
+varpost = 0
 
 
 def main():
@@ -203,12 +203,22 @@ def Post_Handler(caminho, dados):
         message = msg_400BadRequest()
         return message
     elif caminho[0] != '':
-        for i in range(len(caminho), 0, -1):
+        for i in range(0, len(caminho), 1):
             for j in range(0, len(nodo.filhos), 1):
-                for k in range(0, len(nodo.filhos), 1):
-                    if caminho[i] == nodo.nome:
-                        pass
-                    nodo = nodo.filhos[i]
+                if caminho[i] == nodo.filhos[j].nome:
+                    nodo = nodo.filhos[j]
+                    break
+            if caminho[i] != nodo.nome:
+                pos = i
+                break
+    novonodo = Fileserver(caminho[pos])
+    nodo.insere(novonodo)
+    ptnodo = novonodo
+    for k in range(pos+1, len(caminho), 1):
+        novonodo = Fileserver(caminho[k])
+        # achar um meio de renomear os novos nodos para insercao
+        ptnodo.insere(novonodo)
+        ptnodo = novonodo
 
 
 def Delete_Handler(objeto):
