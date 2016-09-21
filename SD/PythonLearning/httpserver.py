@@ -26,6 +26,7 @@ post = "POST"
 delete = "DEL"
 header = "HEADER"
 __metaclass__ = type
+count = 0
 
 
 def main():
@@ -38,6 +39,13 @@ def main():
     print "Servidor rodando na porta %d" % port
     print "Aguardando conexao"
     s.listen(1)
+    arq1 = Fileserver("arq1")
+    root.insere(arq1)
+    arq2 = Fileserver("arq2")
+    arq3 = Fileserver("arq3")
+    arq1.insere(arq2)
+    arq2.insere(arq3)
+    arq3.insere_dados("iejfioejofijapoefk")
     while 1:
         Conexao(s)
 
@@ -57,34 +65,49 @@ def Conexao(Socketcliente):
     metodo, caminhoSplitado = Parsing(message)
     print metodo
     print caminhoSplitado
-    arq1 = Fileserver("arq1")
-    root.insere(arq1)
-    arq2 = Fileserver("arq2")
-    arq3 = Fileserver("arq3")
-    arq1.insere(arq2)
-    arq2.insere(arq3)
-    arq3.insere_dados("iejfioejofijapoefk")
-    metodo_handler(metodo, caminhoSplitado)
+    resultado = metodo_handler(metodo, caminhoSplitado)
+    arquivocliente.write(resultado)
     arquivocliente.close()
     sockcliente.close()
 
 
 def metodo_handler(metodo, caminho):
-    """Definindo qual metodo e qual handler usar, retorna o objeto."""
+    """Definindo qual metodo e qual handler usar, retorna mensagem."""
     if metodo == get:
-        arqresultado = Get_Handler(caminho)
-        if arqresultado is None:
-            print msg_404NotFound()
-        elif arqresultado is not None:
-            print arqresultado.data
+        objeto = acha_objeto(caminho)
+        resposta = Get_Handler(objeto)
+        # fazer a mensagem correta com o codigo e os dados
+        return resposta
     elif metodo == post:
         Post_Handler(caminho)
     elif metodo == put:
         Put_Handler(caminho)
     elif metodo == delete:
-        Delete_Handler(caminho)
+        objeto = acha_objeto(caminho)
+        resposta = Delete_Handler(objeto)
+        return resposta
     elif metodo == header:
         Header_Handler(caminho)
+
+
+def acha_objeto(caminho):
+    """Procura o objeto no qual o caminho termina."""
+    nodo = root
+    if len(caminho) == 1 and caminho[0] == '':
+        return root
+    elif caminho[0] != '':
+        for i in range(0, len(root.filhos), 1):
+            if caminho[0] == root.filhos[i].nome:
+                nodo = root.filhos[i]
+        for i in range(1, len(caminho), 1):
+            for j in range(0, len(nodo.filhos), 1):
+                if caminho[i] == nodo.filhos[j].nome:
+                    nodo = nodo.filhos[j]
+    if caminho[len(caminho)-1] != nodo.nome:
+        nodo = None
+        return None
+    elif caminho[len(caminho)-1] == nodo.nome:
+        return nodo
 
 
 def Parsing(message):
@@ -159,40 +182,56 @@ def msg_404NotFound():
     return msg
 
 
-def Get_Handler(caminho):
+def Get_Handler(objeto):
     """Manejamento do GET."""
-    nodo = root
-    if len(caminho) == 1 and caminho[0] == '':
-        return root
-    elif caminho[0] != '':
-        for i in range(0, len(root.filhos), 1):
-            if caminho[0] == root.filhos[i].nome:
-                nodo = root.filhos[i]
-        for i in range(1, len(caminho), 1):
-            for j in range(0, len(nodo.filhos), 1):
-                if caminho[i] == nodo.filhos[j].nome:
-                    nodo = nodo.filhos[j]
-    if caminho[len(caminho)-1] != nodo.nome:
-        nodo = None
-        return None
-    elif caminho[len(caminho)-1] == nodo.nome:
-        return nodo
+    if objeto is None:
+        mensagem = msg_404NotFound()
+    else:
+        mensagem = objeto.data
+    # Fazer a mensagem correta junto com a msg
+    return mensagem
 
 
 def Put_Handler(mensagem):
-    """Manejamento do PUT(modifica)."""
+    """Manejamento do PUT(modifica dados)."""
 
 
-def Post_Handler(mensagem):
+def Post_Handler(caminho, dados):
     """Manejamento do POST(cria)."""
+    nodo = root
+    if len(caminho) == 1 and caminho[0] == '':
+        message = msg_400BadRequest()
+        return message
+    elif caminho[0] != '':
+        for i in range(len(caminho), 0, -1):
+            for j in range(0, len(nodo.filhos), 1):
+                for k in range(0, len(nodo.filhos), 1):
+                    if caminho[i] == nodo.nome:
+                        pass
+                    nodo = nodo.filhos[i]
+                    nodo =
 
 
-def Delete_Handler(mensagem):
+def Delete_Handler(objeto):
     """Manejamento do DELETE."""
+    if objeto is None:
+        mensagem = msg_404NotFound()
+    else:
+        objeto.remove_arq()
+        mensagem = msg200_OK()
+    return mensagem
 
 
 def Header_Handler(mensagem):
     """Manejamento do Header."""
+
+
+class controle_global():
+    """Lista com todos os arquivos ja criados."""
+
+    def __init__(self, nome):
+        """Inicializa a lista global."""
+        self.criados = []
 
 
 class Fileserver():
@@ -206,6 +245,8 @@ class Fileserver():
         self.data = None
         self.pai = None
         self.nomepai = ''
+        self.created = int(time.time())
+        self.modified = int(time.time())
 
     def insere(self, filho):
         """Inserir na lista de arquivos subjacentes."""
@@ -221,17 +262,22 @@ class Fileserver():
     def insere_dados(self, data):
         """Insere dados dentro de um arquivo."""
         self.data = data
+        self.modified = int(time.time())
 
     def remove_filho(self, filho):
         """Remove um arquivo do diretorio."""
+        self.filhos.extend(filho.filhos)
         self.filhos.remove(filho)
         self.nomefilhos.remove(filho.nome)
+        self.modified = int(time.time())
         del filho
 
     def remove_arq(self):
         """Remove o proprio arquivo que chama."""
+        self.pai.filhos.extend(self.filhos)
         self.pai.filhos.remove(self)
         self.pai.nomefilhos.remove(self.nome)
+        self.pai.modified = int(time.time())
         del self
 
     def get_dados(self):
