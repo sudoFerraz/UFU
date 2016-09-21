@@ -62,16 +62,16 @@ def Conexao(Socketcliente):
         message += sockcliente.recv(1024)
         if c in message:
             break
-    metodo, caminhoSplitado = Parsing(message)
+    metodo, caminhoSplitado, corpo = Parsing(message)
     print metodo
     print caminhoSplitado
-    resultado = metodo_handler(metodo, caminhoSplitado)
+    resultado = metodo_handler(metodo, caminhoSplitado, corpo)
     arquivocliente.write(resultado)
     arquivocliente.close()
     sockcliente.close()
 
 
-def metodo_handler(metodo, caminho):
+def metodo_handler(metodo, caminho, corpo):
     """Definindo qual metodo e qual handler usar, retorna mensagem."""
     if metodo == get:
         objeto = acha_objeto(caminho)
@@ -81,7 +81,9 @@ def metodo_handler(metodo, caminho):
     elif metodo == post:
         Post_Handler(caminho)
     elif metodo == put:
-        Put_Handler(caminho)
+        objeto = acha_objeto(caminho)
+        resposta = Put_Handler(objeto, corpo)
+        return resposta
     elif metodo == delete:
         objeto = acha_objeto(caminho)
         resposta = Delete_Handler(objeto)
@@ -113,11 +115,13 @@ def acha_objeto(caminho):
 def Parsing(message):
     """Faz parsing e separa uma lista para o metodo e caminhos splitados."""
     linhas = message.split("\n")
+    data = message.split("\n\n")
+    data = data[1]
     linhas2 = linhas[0].split(" HTTP")
     linhas3 = linhas2[0].split(" /")
     caminho = linhas3[1].split("/")
     metodo = linhas3[0]
-    return metodo, caminho
+    return metodo, caminho, data
 
 
 def traduz(mensagem):
@@ -192,10 +196,6 @@ def Get_Handler(objeto):
     return mensagem
 
 
-def Put_Handler(mensagem):
-    """Manejamento do PUT(modifica dados)."""
-
-
 def Post_Handler(caminho, dados):
     """Manejamento do POST(cria)."""
     nodo = root
@@ -209,7 +209,6 @@ def Post_Handler(caminho, dados):
                     if caminho[i] == nodo.nome:
                         pass
                     nodo = nodo.filhos[i]
-                    nodo =
 
 
 def Delete_Handler(objeto):
@@ -218,6 +217,16 @@ def Delete_Handler(objeto):
         mensagem = msg_404NotFound()
     else:
         objeto.remove_arq()
+        mensagem = msg200_OK()
+    return mensagem
+
+
+def Put_Handler(objeto, dados):
+    """Manejamento do PUT(modifica dados)."""
+    if objeto is None:
+        mensagem = msg_404NotFound()
+    else:
+        objeto.data = dados
         mensagem = msg200_OK()
     return mensagem
 
