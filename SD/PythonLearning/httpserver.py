@@ -60,16 +60,15 @@ def Conexao(Socketcliente):
     print "Conectado com o cliente %s" % str(addrcliente)
     arquivocliente = sockcliente.makefile('rw', 0)
     arquivocliente.write("Welcome," + str(addrcliente) + " Digite :\n")
-    message = arquivocliente.readline()
-    arquivocliente.write("Testando a readline " + str(message))
-    message = arquivocliente.readline()
-    # Cada input e uma readline difernte, nao precisa manipular
-    # Fechando conexao com o cliente no socket e no arquivo
+    c = "\n\n"
+    message = sockcliente.recv(1024)
+    while 1:
+        message += sockcliente.recv(1024)
+        if c in message:
+            break
+    print '%r' % message
     root = Raiz()
-    dire = Diretorio('dire', root)
     arquivocliente.write(root.nome)
-    arquivocliente.write(str(root.dir))
-    arquivocliente.write(dire.esq)
     arquivocliente.close()
     sockcliente.close()
 
@@ -219,7 +218,7 @@ class Raiz:
     def get_diretorios_raiz(self):
         """Retornando lista de diretorios na raiz."""
         for diretorio in self.dir:
-            print diretorio.nome
+            print str(diretorio.nome)
 
 
 main()
