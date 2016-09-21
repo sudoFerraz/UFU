@@ -17,12 +17,14 @@
 import socket
 import sys
 import time
+import string
+import re
 
 get = "GET"
 put = "PUT"
 post = "POST"
-delete = "DELETE"
-head = "HEADER"
+delete = "DEL"
+header = "HEADER"
 __metaclass__ = type
 
 
@@ -40,37 +42,65 @@ def main():
         Conexao(s)
 
 
-def Parsing(mensagem):
-    """Fazendo parsing da mensagem recebida pelo cliente."""
-    if get in mensagem:
-        try:
-            Get_Handler(mensagem)
-        except socket.error, e:
-            print "Erro ao tratar o request: %s \n" % e
-    if put in mensagem:
-        try:
-            Put_Handler(mensagem)
-        except socket.error, e:
-            print "Erro ao tratar o request: %s \n" % e
-
-
 def Conexao(Socketcliente):
     """Abrindo conexao com cliente quando conectado."""
     sockcliente, addrcliente = Socketcliente.accept()
     print "Conectado com o cliente %s" % str(addrcliente)
     arquivocliente = sockcliente.makefile('rw', 0)
     arquivocliente.write("Welcome," + str(addrcliente) + " Digite :\n")
-    c = "\n\n"
+    c = "\n\n\n"
     message = sockcliente.recv(1024)
     while 1:
         message += sockcliente.recv(1024)
         if c in message:
             break
-    print '%r' % message
-    root = Raiz()
-    arquivocliente.write(root.nome)
+    metodo, caminhoSplitado = Parsing(message)
+    print metodo
+    print caminhoSplitado
+    arq1 = Fileserver("arq1")
+    root.insere(arq1)
+    arq2 = Fileserver("arq2")
+    arq3 = Fileserver("arq3")
+    arq1.insere(arq2)
+    arq2.insere(arq3)
+    arq3.insere_dados("iejfioejofijapoefk")
+    metodo_handler(metodo, caminhoSplitado)
     arquivocliente.close()
     sockcliente.close()
+
+
+def metodo_handler(metodo, caminho):
+    """Definindo qual metodo e qual handler usar, retorna o objeto."""
+    if metodo == get:
+        arqresultado = Get_Handler(caminho)
+        if arqresultado is None:
+            print msg_404NotFound()
+        elif arqresultado is not None:
+            print arqresultado.data
+    elif metodo == post:
+        Post_Handler(caminho)
+    elif metodo == put:
+        Put_Handler(caminho)
+    elif metodo == delete:
+        Delete_Handler(caminho)
+    elif metodo == header:
+        Header_Handler(caminho)
+
+
+def Parsing(message):
+    """Faz parsing e separa uma lista para o metodo e caminhos splitados."""
+    linhas = message.split("\n")
+    linhas2 = linhas[0].split(" HTTP")
+    linhas3 = linhas2[0].split(" /")
+    caminho = linhas3[1].split("/")
+    metodo = linhas3[0]
+    return metodo, caminho
+
+
+def traduz(mensagem):
+    """Coloca mensagem em plaintext."""
+    mensagem = mensagem.replace("\n", " ")
+    return mensagem
 
 
 def msg200_OK():
@@ -129,16 +159,32 @@ def msg_404NotFound():
     return msg
 
 
-def Get_Handler(mensagem):
+def Get_Handler(caminho):
     """Manejamento do GET."""
+    nodo = root
+    if len(caminho) == 1 and caminho[0] == '':
+        return root
+    elif caminho[0] != '':
+        for i in range(0, len(root.filhos), 1):
+            if caminho[0] == root.filhos[i].nome:
+                nodo = root.filhos[i]
+        for i in range(1, len(caminho), 1):
+            for j in range(0, len(nodo.filhos), 1):
+                if caminho[i] == nodo.filhos[j].nome:
+                    nodo = nodo.filhos[j]
+    if caminho[len(caminho)-1] != nodo.nome:
+        nodo = None
+        return None
+    elif caminho[len(caminho)-1] == nodo.nome:
+        return nodo
 
 
 def Put_Handler(mensagem):
-    """Manejamento do PUT."""
+    """Manejamento do PUT(modifica)."""
 
 
 def Post_Handler(mensagem):
-    """Manejamento do POST."""
+    """Manejamento do POST(cria)."""
 
 
 def Delete_Handler(mensagem):
@@ -147,6 +193,50 @@ def Delete_Handler(mensagem):
 
 def Header_Handler(mensagem):
     """Manejamento do Header."""
+
+
+class Fileserver():
+    """Definindo estrutura do servidor de arquivos."""
+
+    def __init__(self, nome):
+        """Inicializando um arquivo na arvore(diretorio tambem)."""
+        self.nome = nome
+        self.filhos = []
+        self.nomefilhos = []
+        self.data = None
+        self.pai = None
+        self.nomepai = ''
+
+    def insere(self, filho):
+        """Inserir na lista de arquivos subjacentes."""
+        self.filhos.append(filho)
+        self.nomefilhos.append(filho.nome)
+        filho.pai = self
+
+    def insere_dentro(self, pai):
+        """Insere arquivo dentro de um pai."""
+        pai.filhos.append(self)
+        pai.nomefilhos.append(self.nome)
+
+    def insere_dados(self, data):
+        """Insere dados dentro de um arquivo."""
+        self.data = data
+
+    def remove_filho(self, filho):
+        """Remove um arquivo do diretorio."""
+        self.filhos.remove(filho)
+        self.nomefilhos.remove(filho.nome)
+        del filho
+
+    def remove_arq(self):
+        """Remove o proprio arquivo que chama."""
+        self.pai.filhos.remove(self)
+        self.pai.nomefilhos.remove(self.nome)
+        del self
+
+    def get_dados(self):
+        """Devolve os dados guardados no arquivo."""
+        return self.data
 
 
 class Arquivo:
@@ -220,5 +310,5 @@ class Raiz:
         for diretorio in self.dir:
             print str(diretorio.nome)
 
-
+root = Fileserver("/")
 main()
