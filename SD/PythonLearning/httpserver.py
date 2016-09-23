@@ -244,12 +244,14 @@ def Put_Handler(objeto, dados):
         mensagem = msg_404NotFound()
     else:
         objeto.data = dados
-        mensagem = msg200_OK()
+        mensagem = msg201_Created()
     return mensagem
 
 
-def Header_Handler(mensagem):
+def Header_Handler(objeto):
     """Manejamento do Header."""
+    mensagem = msg200_OK()
+    return mensagem
 
 
 class controle_global():
