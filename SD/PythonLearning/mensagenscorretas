@@ -1,0 +1,72 @@
+GET / HTTP/1.1
+host: localhost:7000
+
+HTTP/1.1 GET 200 OK
+Version: 0
+Creation: 1474461646602
+Modification: 1474461646602
+Content-Length: 12
+
+arquivo_raiz
+
+
+GET /um/ HTTP/1.1
+host: localhost:7000
+
+HTTP/1.1 404 Not Found
+
+
+POST /um/ HTTP/1.1
+host: localhost:7000
+content-length: 6
+
+digito
+
+HTTP/1.1 POST 200 OK
+Version: 0
+Creation: 1474461783341
+Modification: 1474461783341
+
+
+POST /um/ HTTP/1.1
+host: localhost:7000
+content-length: 7
+
+digito2
+
+HTTP/1.1 403 Forbidden
+
+
+PUT /um/ HTTP/1.1
+host: localhost:7000
+content-length: 7
+
+digito2
+
+HTTP/1.1 PUT 200 OK
+Version: 1
+Creation: 1474461783341
+Modification: 1474461887812
+
+
+PUT /um/dois/ HTTP/1.1
+host: localhost:7000
+content-length: 6
+
+digito
+
+HTTP/1.1 403 Forbidden
+
+
+DELETE /um/ HTTP/1.1
+host: localhost:7000
+
+HTTP/1.1 DELETE 200 OK
+
+
+DELETE /um/ HTTP/1.1
+host: localhost:7000
+
+HTTP/1.1 403 Forbidden
+
+

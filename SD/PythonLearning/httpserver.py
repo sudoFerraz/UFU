@@ -130,16 +130,25 @@ def traduz(mensagem):
     return mensagem
 
 
-def msg200_OK():
+def msg200_OK(metodo, objeto):
     """Definindo a mensagem 200 OK."""
-    msg = """HTTP/1.1 200 OK\nContent-Type: text/html\nConnection: Closed\r\n\r\n
-    <!DOCTYPE HTML PUBLIC>
-    <html><head>
-    <title>200 OK</title>
-    </head><body>
-    </body></html>"""
+    msg = ('HTTP/1.1 ' + str(metodo) + ' 200 OK\n'
+           + 'Version: ' + str(objeto.version) + '\n'
+           + 'Creation: ' + str(objeto.created) + '\n'
+           + 'Modification: ' + str(objeto.modified) + '\n')
+    if objeto.data is None:
+        objeto.data = "None"
+    corpo = ('Content_Length: ' + str(len(objeto.data)) + '\n\n'
+             + str(objeto.data))
+    if metodo == get:
+        msg += corpo
     return msg
-    # Definir a arvores para se utilizar como argumentos nas mensagens
+
+
+def msg403_Forbidden():
+    """Definindo mensagem de acesso nao autorizado."""
+    msg = "HTTP/1.1 403 Forbidden"
+    return msg
 
 
 def msg201_Created():
@@ -177,12 +186,7 @@ def msg_400BadRequest():
 
 def msg_404NotFound():
     """Definindo mensagem."""
-    msg = """HTTP/1.1 501 Not Implemented\nContent-Type: text/html\nConnection: Closed\r\n\r\n
-        <!DOCTYPE HTML PUBLIC>
-        <html><head>
-        <title>501 Not Implemented</title>
-        </head><body>
-        </body></html>"""
+    msg = "HTTP/1.1 404 Not Found"
     return msg
 
 
@@ -191,7 +195,7 @@ def Get_Handler(objeto):
     if objeto is None:
         mensagem = msg_404NotFound()
     else:
-        mensagem = objeto.data
+        mensagem = msg200_OK(get, objeto)
     # Fazer a mensagem correta junto com a msg
     return mensagem
 
@@ -211,9 +215,13 @@ def Post_Handler(caminho, dados):
                     nodo = nodo.filhos[j]
                     break
             # devolve a posicao do caminho que ele difere de um existente
+            pos = i
             if caminho[i] != nodo.nome:
                 pos = i
                 break
+    if caminho[pos] == nodo.nome:
+        msg = msg403_Forbidden()
+        return msg
     novonodo = Fileserver(caminho[pos])
     nodo.insere(novonodo)
     ptnodo = novonodo
@@ -224,7 +232,7 @@ def Post_Handler(caminho, dados):
         ptnodo.insere(novonodo)
         ptnodo = novonodo
     ptnodo.data = dados
-    message = msg200_OK()
+    message = msg200_OK(post, novonodo)
     return message
 
 
@@ -241,10 +249,11 @@ def Delete_Handler(objeto):
 def Put_Handler(objeto, dados):
     """Manejamento do PUT(modifica dados)."""
     if objeto is None:
-        mensagem = msg_404NotFound()
+        mensagem = msg403_Forbidden()
     else:
         objeto.data = dados
-        mensagem = msg201_Created()
+        objeto.version += 1
+        mensagem = msg200_OK(put, objeto)
     return mensagem
 
 
@@ -275,6 +284,7 @@ class Fileserver():
         self.nomepai = ''
         self.created = int(time.time())
         self.modified = int(time.time())
+        self.version = 0
 
     def insere(self, filho):
         """Inserir na lista de arquivos subjacentes."""
@@ -311,78 +321,6 @@ class Fileserver():
     def get_dados(self):
         """Devolve os dados guardados no arquivo."""
         return self.data
-
-
-class Arquivo:
-    """Definindo a estrutura dos arquivos em arvore."""
-
-    def __init__(self, nome):
-        """Inicializando um novo arquivo."""
-        self.nome = nome
-        self.data = self.data.makefile('rw', 0)
-
-    def put_data(self, data):
-        """Colocar dados em um arquivo(post)."""
-        try:
-            self.data = self.data.write(str(data))
-        except OSError, e:
-            print "Nao foi possivel abrir o arquivo: %s" % e
-
-
-class Diretorio:
-    """Definindo os diretorios onde os arquivos serao armazenados."""
-
-    def __init__(self, nome, pai):
-        """Inicializando um novo diretorio."""
-        if type(pai) is Raiz:
-            self.esq = '/'
-            pai.inserir_na_raiz(self)
-        else:
-            self.esq = pai
-            self.inserir_dentro(self, pai)
-        self.dir = []
-        self.nome = nome
-        self.contem_arquivos = []
-
-    def inserir_dentro(self, pai):
-        """Inserir um novo arquivo dentro de um diretorio pai."""
-        try:
-            pai.dir = pai.dir.extend([self])
-        except IndexError, e:
-            print "Erro ao inserir o arquivo no diretorio: %s" % e
-
-
-class Raiz:
-    """Definindo raiz dos diretorios."""
-
-    def __init__(self):
-        """Inicializando a raiz."""
-        self.dir = []
-        self.nome = '/'
-        self.arquivos = []
-
-    def inserir_na_raiz(self, filho):
-        """Inserir um arquivo ou diretorio dentro da raiz."""
-        if type(filho) is Diretorio:
-            try:
-                self.dir.extend([filho])
-            except IndexError, e:
-                print "Erro ao inserir diretorio na raiz : %s" % e
-        if type(filho) is Arquivo:
-            try:
-                self.arquivos.extend([filho])
-            except IndexError, e:
-                print "Erro ao inserir arquivo na raiz : %s" % e
-
-    def get_arquivos_raiz(self):
-        """Retornando lista de arquivos na raiz."""
-        for arquivo in self.arquivos:
-            print arquivo
-
-    def get_diretorios_raiz(self):
-        """Retornando lista de diretorios na raiz."""
-        for diretorio in self.dir:
-            print str(diretorio.nome)
 
 root = Fileserver("/")
 main()
