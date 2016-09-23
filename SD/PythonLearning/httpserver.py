@@ -26,7 +26,6 @@ post = "POST"
 delete = "DEL"
 header = "HEADER"
 __metaclass__ = type
-varpost = 0
 
 
 def main():
@@ -79,7 +78,8 @@ def metodo_handler(metodo, caminho, corpo):
         # fazer a mensagem correta com o codigo e os dados
         return resposta
     elif metodo == post:
-        Post_Handler(caminho)
+        resposta = Post_Handler(caminho, corpo)
+        return resposta
     elif metodo == put:
         objeto = acha_objeto(caminho)
         resposta = Put_Handler(objeto, corpo)
@@ -199,26 +199,33 @@ def Get_Handler(objeto):
 def Post_Handler(caminho, dados):
     """Manejamento do POST(cria)."""
     nodo = root
+    # checa se o caminho 'e a propria raiz
     if len(caminho) == 1 and caminho[0] == '':
         message = msg_400BadRequest()
         return message
+    # acha ate o ultimo nodo que existe no caminho e devolve ele em nodo
     elif caminho[0] != '':
         for i in range(0, len(caminho), 1):
             for j in range(0, len(nodo.filhos), 1):
                 if caminho[i] == nodo.filhos[j].nome:
                     nodo = nodo.filhos[j]
                     break
+            # devolve a posicao do caminho que ele difere de um existente
             if caminho[i] != nodo.nome:
                 pos = i
                 break
     novonodo = Fileserver(caminho[pos])
     nodo.insere(novonodo)
     ptnodo = novonodo
+    # aloca os novos nodos dependendo de quantos vierem no request
     for k in range(pos+1, len(caminho), 1):
         novonodo = Fileserver(caminho[k])
         # achar um meio de renomear os novos nodos para insercao
         ptnodo.insere(novonodo)
         ptnodo = novonodo
+    ptnodo.data = dados
+    message = msg200_OK()
+    return message
 
 
 def Delete_Handler(objeto):
