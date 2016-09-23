@@ -132,10 +132,12 @@ def traduz(mensagem):
 
 def msg200_OK(metodo, objeto):
     """Definindo a mensagem 200 OK."""
-    msg = ('HTTP/1.1 ' + str(metodo) + ' 200 OK\n'
-           + 'Version: ' + str(objeto.version) + '\n'
-           + 'Creation: ' + str(objeto.created) + '\n'
-           + 'Modification: ' + str(objeto.modified) + '\n')
+    msg = ('HTTP/1.1 ' + str(metodo) + ' 200 OK\n').replace('DEL', 'DELETE')
+    msg2 = ('Version: ' + str(objeto.version) + '\n'
+            + 'Creation: ' + str(objeto.created) + '\n'
+            + 'Modification: ' + str(objeto.modified) + '\n')
+    if metodo != delete:
+        msg += msg2
     if objeto.data is None:
         objeto.data = "None"
     corpo = ('Content_Length: ' + str(len(objeto.data)) + '\n\n'
@@ -239,10 +241,10 @@ def Post_Handler(caminho, dados):
 def Delete_Handler(objeto):
     """Manejamento do DELETE."""
     if objeto is None:
-        mensagem = msg_404NotFound()
+        mensagem = msg403_Forbidden()
     else:
         objeto.remove_arq()
-        mensagem = msg200_OK()
+        mensagem = msg200_OK(delete, objeto)
     return mensagem
 
 
