@@ -37,7 +37,6 @@ def main():
     s.bind((host, port))
     print "Servidor rodando na porta %d" % port
     print "Aguardando conexao"
-    s.listen(1)
     arq1 = Fileserver("arq1")
     root.insere(arq1)
     arq2 = Fileserver("arq2")
@@ -45,6 +44,7 @@ def main():
     arq1.insere(arq2)
     arq2.insere(arq3)
     arq3.insere_dados("iejfioejofijapoefk")
+    s.listen(1)
     while 1:
         Conexao(s)
 
@@ -56,7 +56,7 @@ def Conexao(Socketcliente):
     arquivocliente = sockcliente.makefile('rw', 0)
     arquivocliente.write("Welcome," + str(addrcliente) + " Digite :\n")
     c = "\n\n\n"
-    message = sockcliente.recv(1024)
+    message = ''
     while 1:
         message += sockcliente.recv(1024)
         if c in message:
@@ -89,7 +89,9 @@ def metodo_handler(metodo, caminho, corpo):
         resposta = Delete_Handler(objeto)
         return resposta
     elif metodo == header:
-        Header_Handler(caminho)
+        objeto = acha_objeto(caminho)
+        resposta = Header_Handler(objeto)
+        return resposta
 
 
 def acha_objeto(caminho):
@@ -140,10 +142,13 @@ def msg200_OK(metodo, objeto):
         msg += msg2
     if objeto.data is None:
         objeto.data = "None"
-    corpo = ('Content_Length: ' + str(len(objeto.data)) + '\n\n'
-             + str(objeto.data))
+    corpo = ('Content_Length: ' + str(len(objeto.data)))
+    dados = ('\n\n' + str(objeto.data))
+    if metodo == header:
+        msg += corpo
     if metodo == get:
         msg += corpo
+        msg += dados
     return msg
 
 
@@ -261,7 +266,10 @@ def Put_Handler(objeto, dados):
 
 def Header_Handler(objeto):
     """Manejamento do Header."""
-    mensagem = msg200_OK()
+    if objeto is None:
+        mensagem = msg_404NotFound()
+    else:
+        mensagem = msg200_OK(header, objeto)
     return mensagem
 
 
