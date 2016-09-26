@@ -23,15 +23,15 @@ import re
 get = "GET"
 put = "PUT"
 post = "POST"
-delete = "DEL"
-header = "HEADER"
+delete = "DELETE"
+header = "HEAD"
 __metaclass__ = type
 
 
 def main():
     """Funcao principal para conexao."""
     host = ''
-    port = 5555
+    port = int(sys.argv[1])
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((host, port))
@@ -46,17 +46,23 @@ def Conexao(Socketcliente):
     """Abrindo conexao com cliente quando conectado."""
     sockcliente, addrcliente = Socketcliente.accept()
     print "Conectado com o cliente %s" % str(addrcliente)
-    c = "\n\n\n"
+    c = "\r\n\r\n"
     message = ''
     while 1:
         message += sockcliente.recv(1024)
+        print message
         if c in message:
             break
+        # check = sockcliente.recv(1024)
+        # if not check:
+        #    break
     metodo, caminhoSplitado, corpo = Parsing(message)
     print metodo
     print caminhoSplitado
+    print corpo
     resultado = metodo_handler(metodo, caminhoSplitado, corpo)
     sockcliente.send(resultado)
+    print resultado
     sockcliente.close()
 
 
@@ -107,7 +113,7 @@ def acha_objeto(caminho):
 def Parsing(message):
     """Faz parsing e separa uma lista para o metodo e caminhos splitados."""
     linhas = message.split("\n")
-    data = message.split("\n\n")
+    data = message.split("\r\n\r\n")
     data = data[1]
     linhas2 = linhas[0].split(" HTTP")
     linhas3 = linhas2[0].split(" /")
@@ -124,7 +130,7 @@ def traduz(mensagem):
 
 def msg200_OK(metodo, objeto):
     """Definindo a mensagem 200 OK."""
-    msg = ('HTTP/1.1 ' + str(metodo) + ' 200 OK\n').replace('DEL', 'DELETE')
+    msg = ('HTTP/1.1 ' + str(metodo) + ' 200 OK\n')
     msg2 = ('Version: ' + str(objeto.version) + '\n'
             + 'Creation: ' + str(objeto.created) + '\n'
             + 'Modification: ' + str(objeto.modified) + '\n')
@@ -142,9 +148,13 @@ def msg200_OK(metodo, objeto):
     return msg
 
 
-def msg403_Forbidden():
+def msg403_Forbidden(metodo, objeto):
     """Definindo mensagem de acesso nao autorizado."""
     msg = "HTTP/1.1 403 Forbidden"
+    if metodo == post:
+        msg += ('\nVersion: ' + str(objeto.version) + '\n'
+                + 'Creation: ' + str(objeto.created) + '\n'
+                + 'Modification: ' + str(objeto.modified) + '\n')
     return msg
 
 
@@ -172,12 +182,7 @@ def msg_204NoContent():
 
 def msg_400BadRequest():
     """Definindo mensagem 400."""
-    msg = """HTTP/1.1 400 Bad request\nContent-Type: text/html\nConnection: Closed\r\n\r\n
-        <!DOCTYPE HTML PUBLIC>
-        <html><head>
-        <title>204 Bad Request</title>
-        </head><body>
-        </body></html>"""
+    msg = "HTTP/1.1 400 Bad request"
     return msg
 
 
@@ -217,7 +222,7 @@ def Post_Handler(caminho, dados):
                 pos = i
                 break
     if caminho[pos] == nodo.nome:
-        msg = msg403_Forbidden()
+        msg = msg403_Forbidden(post, nodo)
         return msg
     novonodo = Fileserver(caminho[pos])
     nodo.insere(novonodo)
@@ -236,7 +241,7 @@ def Post_Handler(caminho, dados):
 def Delete_Handler(objeto):
     """Manejamento do DELETE."""
     if objeto is None:
-        mensagem = msg403_Forbidden()
+        mensagem = msg403_Forbidden(delete, objeto)
     else:
         objeto.remove_arq()
         mensagem = msg200_OK(delete, objeto)
@@ -246,7 +251,7 @@ def Delete_Handler(objeto):
 def Put_Handler(objeto, dados):
     """Manejamento do PUT(modifica dados)."""
     if objeto is None:
-        mensagem = msg403_Forbidden()
+        mensagem = msg403_Forbidden(put, objeto)
     else:
         objeto.data = dados
         objeto.version += 1
