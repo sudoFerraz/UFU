@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#Chapter 1 - Download Example
+# Download Example
 
 import urllib, sys
 

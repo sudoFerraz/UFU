@@ -25,7 +25,6 @@ port = 80
 user = sys.argv[1]
 pwd = sys.argv[2]
 users = {
-    'ferraz': 'starwars',
     'root': 'toor',
     'dpr': 'rogers'
 }
