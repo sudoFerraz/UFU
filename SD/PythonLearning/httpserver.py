@@ -19,6 +19,8 @@ import sys
 import time
 import string
 import re
+import threading
+import time
 
 # Definindo var. globais
 get = "GET"
@@ -45,8 +47,8 @@ def main():
     s.listen(10)
     while 1:
         Conexao(s)
-
-
+        
+         
 def Conexao(Socketcliente):
     """Abrindo conexao com cliente quando conectado."""
     sockcliente, addrcliente = Socketcliente.accept()
